@@ -1,0 +1,198 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <title>Document</title>
+</head>
+<style>
+    canvas {
+    border: solid 5px black;
+    background-color: #f1f1f1;
+    display: block;
+    margin: auto;
+}
+</style>
+<body onload="startGame()">
+    <script>
+        var Paddle_a;
+        var Paddle_b;
+        var Ball;
+        var ScoreBoard_a;
+        var ScoreBoard_b;
+        var Score_a = 0;
+        var Score_b = 0;
+        var MidLine;
+
+        
+        
+        //Init The Game
+        function startGame() {
+            GameArea.start();
+            Paddle_a = new paddle(40, 225, 30, 150, "black");
+            Paddle_b = new paddle(720, 225, 30, 150, "black");
+            Ball = new ball(385, 285, 30, 30 ,"black");
+            ScoreBoard_a = new text(100, 100, "30px", "Consolas", "Player 1:", "black");
+            ScoreBoard_b = new text(510, 100, "30px", "Consolas", "Player 2:", "black");
+            MidLine = new line(395, 0, 10, 600, "black");
+        }
+        
+        //Create Game Area
+        var GameArea = {
+            canvas : document.createElement("canvas"),
+            start : function() {
+                this.canvas.width = 800;
+                this.canvas.height = 600;
+                this.context = this.canvas.getContext("2d");
+                document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+
+                this.interval = setInterval(updateGameArea, 5);
+
+                window.addEventListener( "keydown", function (e) {
+                    GameArea.keys = (GameArea.keys || []);
+                    GameArea.keys[e.keyCode] = true;
+                });
+                window.addEventListener("keyup", function(e) {
+                    GameArea.keys[e.keyCode] = false;
+                }); 
+            },
+            clear: function(){
+                this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+            
+        }
+
+        //Creat Paddle function
+        function paddle (x, y, width, height, color) {
+            this.width = width;
+            this.height = height;
+            this.x = x;
+            this.y = y;
+            this.speedX = 0;
+            this.speedY = 0;
+            this.update = function() {
+                ctx = GameArea.context;
+                ctx.fillStyle = color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            };
+            this.moving = function() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+            }
+        }
+
+        //Create Ball function
+        function ball (x, y, width, height, color) {
+            this.width = width;
+            this.height = height;
+            this.x = x;
+            this.y = y;
+            this.speedX = 1;
+            this.speedY = -1;
+            this.update = function() {
+                ctx = GameArea.context;
+                ctx.fillStyle = color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            };
+            this.moving = function() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                //Collisions with Top and Bottm borders
+                if(this.y < 0) {
+                    this.y = 0;
+                    this.speedY *= -1;
+                }
+                if(this.y > 580) {
+                    this.y = 580;
+                    this.speedY *= -1;
+                }
+                //Collisions with paddles
+                if((this.x > 690 && this.x < 720) && (this.y > Paddle_b.y -25  && this.y < Paddle_b.y + 145)){
+                    this.x = 690;
+                    this.speedX *= -1;
+                }
+                if((this.x < 70 && this.x > 40) && (this.y > Paddle_a.y -25 && this.y < Paddle_a.y + 145)){
+                    this.x = 70;
+                    this.speedX *= -1;
+                }
+                //Reset the ball position if it goes out of the right or left of game area and update the scores
+                if(this.x > 800 ) {
+                    this.x = x;
+                    this.y = y;
+                    Score_a += 1;
+                }
+                if(this.x < 0) {
+                    this.x = x;
+                    this.y = y;
+                    Score_b += 1;
+                }
+            }
+        }
+
+        //Create text function
+        function text (x, y, fontSize, fontFamily, text, color) {
+            this.x = x;
+            this.y = y;
+            this.fontSize = fontSize;
+            this.fontFamily = fontFamily;
+            this.text = text;
+            this.update = function() {
+                ctx = GameArea.context;
+                ctx.font = this.fontSize + " " + this.fontFamily;
+                ctx.fillStyle = color;
+                ctx.fillText(this.text, this.x, this.y);
+            };
+        }
+        
+        //Create MidLine function
+        function line (x, y, width, height, color) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.update = function() {
+                ctx = GameArea.context;
+                ctx.fillStyle = color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            };
+        }
+            
+        
+        //Main Game Loop
+        function updateGameArea() {
+            GameArea.clear();
+
+            //Paddle_a
+            Paddle_a.speedX = 0;
+            Paddle_a.speedY = 0; 
+            if (GameArea.keys && GameArea.keys[87]) {Paddle_a.speedY = -1; };
+            if (GameArea.keys && GameArea.keys[83]) {Paddle_a.speedY = 1; };
+            Paddle_a.moving();
+            Paddle_a.update();
+
+            //Paddle_b
+            Paddle_b.speedX = 0;
+            Paddle_b.speedY = 0;
+            if (GameArea.keys && GameArea.keys[38]) {Paddle_b.speedY = -1; };
+            if (GameArea.keys && GameArea.keys[40]) {Paddle_b.speedY = 1; };
+            Paddle_b.moving();
+            Paddle_b.update();
+
+            //The Ball  
+            Ball.moving();
+            Ball.update();
+
+            //ScoreBoard
+            ScoreBoard_a.text = "Player 1: " + Score_a;
+            ScoreBoard_a.update();
+           
+            ScoreBoard_b.text = "Player 2: " + Score_b;
+            ScoreBoard_b.update();
+
+            //Middle Line
+            MidLine.update();
+        };
+    </script>
+</body>
+</html>
